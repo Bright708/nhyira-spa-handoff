@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nhyira Spa, book a treatment</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+input::placeholder{color:#8A877F}
+</style>
+</helmet>
+<div style="font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif; background: #F2F0EB; color: #0F0F0E; font-size: 16px; line-height: 1.5; min-height: 1200px;">
+
+<header style="border-bottom: 1px solid #0F0F0E;">
+<div style="max-width: 1360px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); min-height: 72px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+<a href="OptionB.dc.html" style="font-weight: 900; font-stretch: 72%; font-size: 30px; letter-spacing: 0.02em; color: #0F0F0E; text-decoration: none;">NHYIRA</a>
+<a href="OptionB.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; gap: 8px; color: #0F0F0E; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>Back to site</a>
+</div>
+</header>
+
+<div style="max-width: 1360px; margin: 0 auto; padding: 64px clamp(16px, 4vw, 40px) 96px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start;">
+
+<main style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 48px;">
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #B8432B;">/ Book online</span>
+<h1 style="margin: 0; font-weight: 900; font-stretch: 68%; font-size: clamp(64px, 8vw, 120px); line-height: 0.86; text-transform: uppercase;">Lock in<br>your time.</h1>
+</div>
+
+<section aria-labelledby="b1" style="display: flex; flex-direction: column; gap: 16px;">
+<h2 id="b1" style="margin: 0; padding-bottom: 12px; border-bottom: 1px solid #0F0F0E; display: flex; gap: 14px; font-size: 14px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;"><span style="color: #B8432B;">01</span>Treatment</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 10px;">
+<sc-for list="{{treatments}}" as="t" hint-placeholder-count="6">
+<sc-if value="{{t.on}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-pressed="true" onClick="{{t.pick}}" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; min-height: 76px; padding: 16px 20px; box-sizing: border-box; text-align: left; cursor: pointer; font-family: inherit; color: #F2F0EB; background: #0F0F0E; border: 1px solid #0F0F0E;">
+<span style="display: flex; flex-direction: column;"><span style="font-weight: 900; font-stretch: 72%; font-size: 26px; line-height: 1.05; text-transform: uppercase;">{{t.name}}</span><span style="font-size: 13px; color: #B5B0A6;">{{t.dur}}</span></span>
+<span style="font-weight: 800; white-space: nowrap;">{{t.priceLabel}}</span>
+</button>
+</sc-if>
+<sc-if value="{{t.off}}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-pressed="false" onClick="{{t.pick}}" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; min-height: 76px; padding: 16px 20px; box-sizing: border-box; text-align: left; cursor: pointer; font-family: inherit; color: #0F0F0E; background: transparent; border: 1px solid #0F0F0E;">
+<span style="display: flex; flex-direction: column;"><span style="font-weight: 900; font-stretch: 72%; font-size: 26px; line-height: 1.05; text-transform: uppercase;">{{t.name}}</span><span style="font-size: 13px; color: #5C5A55;">{{t.dur}}</span></span>
+<span style="font-weight: 800; white-space: nowrap;">{{t.priceLabel}}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="b2" style="display: flex; flex-direction: column; gap: 16px;">
+<h2 id="b2" style="margin: 0; padding-bottom: 12px; border-bottom: 1px solid #0F0F0E; display: flex; gap: 14px; font-size: 14px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;"><span style="color: #B8432B;">02</span>Day <span style="margin-left: auto; color: #5C5A55;">November 2026</span></h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px;">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<sc-if value="{{d.on}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-pressed="true" onClick="{{d.pick}}" style="display: flex; flex-direction: column; align-items: center; min-height: 84px; padding: 12px 8px; cursor: pointer; font-family: inherit; color: #F2F0EB; background: #0F0F0E; border: 1px solid #0F0F0E;">
+<span style="font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;">{{d.dow}}</span>
+<span style="font-weight: 900; font-stretch: 70%; font-size: 40px; line-height: 1;">{{d.num}}</span>
+</button>
+</sc-if>
+<sc-if value="{{d.off}}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-pressed="false" onClick="{{d.pick}}" style="display: flex; flex-direction: column; align-items: center; min-height: 84px; padding: 12px 8px; cursor: pointer; font-family: inherit; color: #0F0F0E; background: transparent; border: 1px solid #0F0F0E;">
+<span style="font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #5C5A55;">{{d.dow}}</span>
+<span style="font-weight: 900; font-stretch: 70%; font-size: 40px; line-height: 1;">{{d.num}}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="b3" style="display: flex; flex-direction: column; gap: 16px;">
+<h2 id="b3" style="margin: 0; padding-bottom: 12px; border-bottom: 1px solid #0F0F0E; display: flex; gap: 14px; font-size: 14px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;"><span style="color: #B8432B;">03</span>Time <span style="margin-left: auto; color: #5C5A55;">Accra time (GMT)</span></h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px;">
+<sc-for list="{{times}}" as="tm" hint-placeholder-count="6">
+<sc-if value="{{tm.on}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-pressed="true" onClick="{{tm.pick}}" style="min-height: 52px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #F2F0EB; background: #0F0F0E; border: 1px solid #0F0F0E;">{{tm.label}}</button>
+</sc-if>
+<sc-if value="{{tm.off}}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-pressed="false" onClick="{{tm.pick}}" style="min-height: 52px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #0F0F0E; background: transparent; border: 1px solid #0F0F0E;">{{tm.label}}</button>
+</sc-if>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="b4" style="display: flex; flex-direction: column; gap: 16px;">
+<h2 id="b4" style="margin: 0; padding-bottom: 12px; border-bottom: 1px solid #0F0F0E; display: flex; gap: 14px; font-size: 14px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;"><span style="color: #B8432B;">04</span>Your details</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px;">
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">Full name
+<input type="text" placeholder="Ama Mensah" style="min-height: 52px; padding: 0 16px; font-family: inherit; font-size: 16px; color: #0F0F0E; background: #FFFFFF; border: 1px solid #0F0F0E; border-radius: 0;"></label>
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">WhatsApp number
+<input type="tel" placeholder="+44 7700 900123" style="min-height: 52px; padding: 0 16px; font-family: inherit; font-size: 16px; color: #0F0F0E; background: #FFFFFF; border: 1px solid #0F0F0E; border-radius: 0;"></label>
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">Email for receipt
+<input type="email" placeholder="you@example.com" style="min-height: 52px; padding: 0 16px; font-family: inherit; font-size: 16px; color: #0F0F0E; background: #FFFFFF; border: 1px solid #0F0F0E; border-radius: 0;"></label>
+</div>
+</section>
+</main>
+
+<aside aria-label="Booking summary" style="flex: 1 1 360px; min-width: 0; background: #0F0F0E; color: #F2F0EB; padding: 36px 32px; box-sizing: border-box; display: flex; flex-direction: column;">
+<sc-if value="{{notPaid}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 24px;">
+<h2 style="margin: 0; font-weight: 900; font-stretch: 68%; font-size: 52px; line-height: 0.9; text-transform: uppercase;">Your booking</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 12px 20px; font-size: 15px;">
+<dt style="color: #9C978D;">Treatment</dt><dd style="margin: 0; text-align: right; font-weight: 800; text-transform: uppercase;">{{sel.name}}</dd>
+<dt style="color: #9C978D;">Length</dt><dd style="margin: 0; text-align: right;">{{sel.dur}}</dd>
+<dt style="color: #9C978D;">Date</dt><dd style="margin: 0; text-align: right;">{{dayLabel}}</dd>
+<dt style="color: #9C978D;">Time</dt><dd style="margin: 0; text-align: right;">{{timeLabel}} GMT</dd>
+</dl>
+<div style="border-top: 1px solid #3A3833; padding-top: 20px; display: grid; grid-template-columns: auto 1fr; gap: 10px 20px; font-size: 15px;">
+<span style="color: #9C978D;">Total</span><span style="text-align: right;">{{totalLabel}}</span>
+<span style="color: #9C978D;">Pay at the spa</span><span style="text-align: right;">{{balanceLabel}}</span>
+</div>
+<div style="border-top: 1px solid #3A3833; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
+<span style="font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;">Deposit today<br>30%</span>
+<span style="font-weight: 900; font-stretch: 70%; font-size: 56px; line-height: 0.9;">{{depositLabel}}</span>
+</div>
+<button type="button" onClick="{{pay}}" style="min-height: 60px; width: 100%; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #FFFFFF; background: #B8432B; border: 0;">Pay {{depositLabel}} deposit</button>
+<p style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B5B0A6;">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+Card or MoMo. Secured by Paystack</p>
+<p style="margin: 0; font-size: 13px; color: #9C978D; text-align: center;">[Your rescheduling policy]</p>
+</div>
+</sc-if>
+<sc-if value="{{paid}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 20px;">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #E07A5F;">/ Confirmed</span>
+<h2 style="margin: 0; font-weight: 900; font-stretch: 68%; font-size: 64px; line-height: 0.86; text-transform: uppercase;">You're<br>booked.</h2>
+<p style="margin: 0; color: #D9D5CC;">{{sel.name}}, {{dayLabel}} at {{timeLabel}}. Deposit of {{depositLabel}} paid. Confirmation sent to your WhatsApp.</p>
+<div style="border-top: 1px solid #3A3833; padding-top: 16px; display: flex; justify-content: space-between; font-size: 15px;"><span style="color: #9C978D;">Left to pay at the spa</span><span style="font-weight: 800;">{{balanceLabel}}</span></div>
+<button type="button" onClick="{{reset}}" style="min-height: 56px; width: 100%; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #F2F0EB; background: transparent; border: 1px solid #F2F0EB;">Book another</button>
+</div>
+</sc-if>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1200}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { t: 'stone', d: 2, tm: '14:30', paid: false };
+}
+renderVals() {
+var self = this;
+var s = this.state;
+var fmt = function (n) { return 'GH₵ ' + n.toLocaleString('en-US'); };
+var list = [
+{ id: 'swedish', name: 'Swedish', dur: '60 min', price: 450 },
+{ id: 'deep', name: 'Deep tissue', dur: '60 min', price: 550 },
+{ id: 'stone', name: 'Hot stone', dur: '90 min', price: 750 },
+{ id: 'glow', name: 'Glow facial', dur: '60 min', price: 500 },
+{ id: 'pedi', name: 'Spa pedicure', dur: '60 min', price: 250 },
+{ id: 'ritual', name: 'Half-day ritual', dur: '4 hrs', price: 1350 }
+];
+var treatments = list.map(function (t) {
+return { name: t.name, dur: t.dur, priceLabel: fmt(t.price), on: s.t === t.id, off: s.t !== t.id, pick: function () { self.setState({ t: t.id }); } };
+});
+var dayData = [['Tue', 17], ['Wed', 18], ['Thu', 19], ['Fri', 20], ['Sat', 21], ['Sun', 22], ['Mon', 23]];
+var days = dayData.map(function (d, i) {
+return { dow: d[0], num: d[1], on: s.d === i, off: s.d !== i, pick: function () { self.setState({ d: i }); } };
+});
+var timeData = [['10:00', '10:00 AM'], ['11:30', '11:30 AM'], ['13:00', '1:00 PM'], ['14:30', '2:30 PM'], ['16:00', '4:00 PM'], ['17:30', '5:30 PM']];
+var times = timeData.map(function (t) {
+return { label: t[1], on: s.tm === t[0], off: s.tm !== t[0], pick: function () { self.setState({ tm: t[0] }); } };
+});
+var sel = list.filter(function (t) { return t.id === s.t; })[0];
+var deposit = Math.round(sel.price * 0.3);
+var dd = dayData[s.d];
+var tl = timeData.filter(function (t) { return t[0] === s.tm; })[0];
+return {
+treatments: treatments, days: days, times: times, sel: sel,
+dayLabel: dd[0] + ' ' + dd[1] + ' Nov',
+timeLabel: tl ? tl[1] : '',
+totalLabel: fmt(sel.price), depositLabel: fmt(deposit), balanceLabel: fmt(sel.price - deposit),
+paid: s.paid, notPaid: !s.paid,
+pay: function () { self.setState({ paid: true }); },
+reset: function () { self.setState({ paid: false }); }
+};
+}
+}
+</script>
+</body>
+</html>
