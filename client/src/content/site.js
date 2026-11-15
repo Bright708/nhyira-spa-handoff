@@ -1,7 +1,7 @@
 // Business details in one place. Swap these when pitching a real spa.
 export const SITE = {
   name: 'Nhyira Spa',
-  address: '14 Westlands Blvd, Accra',
+  address: 'Westlands Blvd, Accra',
   whatsappUrl: 'https://wa.me/233558086796',
   mapsUrl: 'https://maps.google.com/?q=Westlands+Boulevard+Accra',
   instagramUrl: 'https://instagram.com/',

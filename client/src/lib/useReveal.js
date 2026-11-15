@@ -15,7 +15,7 @@ export function useReveal() {
           }
         }
       },
-      { rootMargin: '0px 0px -10% 0px' },
+      { rootMargin: '0px 0px -10% 0px', threshold: 0 },
     )
     document.querySelectorAll('[data-reveal]:not(.is-in)').forEach((el) => io.observe(el))
     root.classList.add('reveal-on')

@@ -9,7 +9,7 @@ function useNextFreeSlot() {
   const [state, setState] = useState({ status: 'loading', slot: null })
   useEffect(() => {
     const ctrl = new AbortController()
-    getAvailability(undefined, { signal: ctrl.signal })
+    getAvailability(undefined, undefined, { signal: ctrl.signal })
       .then((data) =>
         setState(data?.nextFreeSlot ? { status: 'ready', slot: data.nextFreeSlot } : { status: 'none', slot: null }),
       )
@@ -22,7 +22,7 @@ function useNextFreeSlot() {
 }
 
 const boxLabel = 'text-[11px] font-bold uppercase tracking-[0.16em] text-ash'
-const cellValue = 'text-[28px] leading-[1.1] font-black uppercase stretch-72'
+const cellValue = 'text-[clamp(20px,5.6vw,28px)] leading-[1.1] font-black whitespace-nowrap uppercase stretch-72'
 const cellLabel = 'text-xs font-semibold uppercase tracking-[0.1em] text-ash'
 
 export default function Hero() {
@@ -50,10 +50,10 @@ export default function Hero() {
         decoding="async"
         className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center]"
       />
-      {/* The one allowed gradient: dark fade so the type reads over the photo. */}
+      {/* The one allowed gradient: dark fade from the bottom and left so all hero type passes 4.5:1. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(15,15,14,0.08)_0%,rgba(15,15,14,0.38)_40%,rgba(15,15,14,0.88)_100%)]"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(15,15,14,0.66)_0%,rgba(15,15,14,0.74)_50%,rgba(15,15,14,0.93)_100%)] lg:bg-[linear-gradient(90deg,rgba(15,15,14,0.78)_0%,rgba(15,15,14,0.5)_50%,rgba(15,15,14,0)_80%),linear-gradient(180deg,rgba(15,15,14,0.35)_0%,rgba(15,15,14,0.6)_45%,rgba(15,15,14,0.93)_100%)]"
       />
 
       <div className="wrap flex flex-wrap items-end justify-between gap-10 pt-16 pb-14">
@@ -77,10 +77,10 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="flex max-w-[360px] flex-[1_1_280px] flex-col border border-hero-line">
+        <div className="flex max-w-[440px] flex-[1_1_280px] flex-col border border-hero-line bg-[rgba(15,15,14,0.5)] lg:min-w-[420px]">
           <div className="flex flex-col gap-0.5 border-b border-hero-line px-5 py-[18px]">
             <span className={boxLabel}>Next free slot</span>
-            <span className="min-h-10 text-[40px] leading-none font-black uppercase stretch-72" aria-live="polite">
+            <span className="min-h-10 text-[clamp(32px,9vw,40px)] leading-none font-black whitespace-nowrap uppercase stretch-72" aria-live="polite">
               {slotText === null ? (
                 <span className="sr-only">Checking availability</span>
               ) : next.status === 'ready' ? (
@@ -95,11 +95,11 @@ export default function Hero() {
             </span>
           </div>
           <div className="grid grid-cols-2">
-            <div className="flex flex-col border-r border-hero-line px-5 py-4">
+            <div className="flex flex-col border-r border-hero-line px-4 py-4 sm:px-5">
               <span className={cellValue}>7 days</span>
               <span className={cellLabel}>Open weekly</span>
             </div>
-            <div className="flex flex-col px-5 py-4">
+            <div className="flex flex-col px-4 py-4 sm:px-5">
               <span className={cellValue}>Card + MoMo</span>
               <span className={cellLabel}>Via Paystack</span>
             </div>

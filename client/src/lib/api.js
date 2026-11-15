@@ -36,9 +36,14 @@ export async function getTreatments(opts) {
   return apiGet('/api/treatments', opts)
 }
 
-export async function getAvailability(date, opts) {
-  if (USE_MOCKS) return (await import('../mocks/availability.js')).mockAvailability(date)
-  return apiGet(`/api/availability${date ? `?date=${date}` : ''}`, opts)
+/** Start times for a day. With a treatmentId, only starts where that treatment fits before closing. */
+export async function getAvailability(date, treatmentId, opts) {
+  if (USE_MOCKS) return (await import('../mocks/availability.js')).mockAvailability(date, treatmentId)
+  const q = new URLSearchParams()
+  if (date) q.set('date', date)
+  if (treatmentId) q.set('treatmentId', treatmentId)
+  const qs = q.toString()
+  return apiGet(`/api/availability${qs ? `?${qs}` : ''}`, opts)
 }
 
 export async function initializeBooking(payload) {

@@ -11,19 +11,23 @@ render.yaml   Render blueprint for the API
 
 ## How booking works
 
-1. The browser asks `GET /api/availability` for open slots (Mon to Sat 8am to 8pm, Sun 12pm to
-   8pm, every 90 minutes, Accra time = GMT).
+1. The browser asks `GET /api/availability?date=…&treatmentId=…` for open slots (Mon to Sat 8am
+   to 8pm, Sun 12pm to 8pm, starts every 90 minutes, Accra time = GMT). Only starts where the
+   treatment finishes by closing are offered, and past times today are hidden.
 2. `POST /api/bookings/initialize` checks the input, prices it **from the database** (amounts
-   sent by the browser are ignored), saves a `pending` booking that holds the slot for 15
-   minutes, and opens a Paystack transaction for the deposit in pesewas.
+   sent by the browser are ignored), re-checks capacity, saves a `pending` booking that holds
+   the slot for 15 minutes, and opens a Paystack transaction for the deposit in pesewas.
 3. The browser opens the Paystack popup with the returned `access_code`.
 4. On success the browser calls `GET /api/bookings/verify/:reference`. The server asks Paystack,
    checks status, amount and currency, and marks the booking `paid`.
 5. Paystack also calls `POST /api/paystack/webhook` (HMAC SHA512 signature checked against the
    raw body). Either path can mark the booking paid; both are safe to repeat.
 
-Unpaid holds expire after 15 minutes. A database index allows only one pending or paid booking
-per start time, so a slot can never be double-booked.
+Unpaid holds expire after 15 minutes. The spa has `ROOMS` treatment rooms (default 2). Each
+booking stores its start and end, and a time is free only if, at every moment of the treatment,
+fewer than `ROOMS` paid or live pending bookings are running. The check runs inside the database
+under a per-day lock (`hold_slot`, `mark_booking_paid` in `002_capacity.sql`), so two people
+racing for the last room can't both get it.
 
 ## Run it locally
 
@@ -58,6 +62,7 @@ Supabase > SQL Editor and run it. It is safe to run more than once.
 | `PAYSTACK_SECRET_KEY` | Paystack > Settings > API Keys & Webhooks. Use the **test** key (`sk_test_...`). |
 | `CLIENT_URL` | Site origin(s) allowed by CORS, comma-separated |
 | `DATABASE_URL` | Only for `npm run migrate`. Supabase > Connect > Session pooler URI. |
+| `ROOMS` | Optional. Treatment rooms, i.e. how many bookings may overlap. Default `2`. |
 
 The secret keys never go in `client/`. The browser never talks to Supabase directly; RLS is on
 with no policies, so the public keys can read nothing.
@@ -79,7 +84,7 @@ every restart).
 ### Tests
 
 ```bash
-cd server && npm test       # slot grid, deposit maths, webhook signature
+cd server && npm test       # slot grid, room capacity, deposit maths, webhook signature
 ```
 
 ## Deploy

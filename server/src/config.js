@@ -15,6 +15,8 @@ export const config = {
   supabaseKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY,
   paystackSecret: env.PAYSTACK_SECRET_KEY,
   depositRate: 0.3,
+  // Treatment rooms: how many bookings may overlap at once. Two overlap fine, a third can't.
+  rooms: Number(env.ROOMS) || 2,
   pendingHoldMinutes: 15,
   bookingWindowDays: 60, // how far ahead people can book
 }

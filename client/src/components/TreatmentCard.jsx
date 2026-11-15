@@ -8,7 +8,7 @@ export default function TreatmentCard({ t }) {
         <img
           src={t.image_url}
           srcSet={cardSrcSet(t.image_url)}
-          sizes="(min-width: 1360px) 310px, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 1360px) 305px, (min-width: 1260px) calc(25vw - 35px), (min-width: 960px) calc(33vw - 40px), (min-width: 632px) calc(50vw - 36px), calc(100vw - 32px)"
           width="960"
           height="1200"
           loading="lazy"

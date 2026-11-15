@@ -13,6 +13,8 @@ services:
         value: "22"
       - key: NODE_ENV
         value: production
+      - key: ROOMS
+        value: "2"
       - key: CLIENT_URL
         sync: false # e.g. https://nhyira-spa.vercel.app
       - key: SUPABASE_URL

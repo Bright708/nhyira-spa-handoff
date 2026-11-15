@@ -1,7 +1,8 @@
 import { config } from '../config.js'
 import { db, DbError } from '../lib/supabase.js'
-import { addDays, hhmm, slotStartsForDate, toDateStr, TIMEZONE } from '../lib/hours.js'
+import { addDays, addMinutes, hhmm, SLOT_MINUTES, slotStartsForDate, toDateStr, TIMEZONE } from '../lib/hours.js'
 import { priceFor, toPesewas } from '../lib/pricing.js'
+import { peakOverlap } from '../lib/capacity.js'
 
 export class HttpError extends Error {
   constructor(status, message, extra) {
@@ -45,86 +46,80 @@ export async function expireStale({ force = false } = {}) {
 // ---------------------------------------------------------------------------
 // Availability
 // ---------------------------------------------------------------------------
-async function takenStartTimes(fromIso, toIso) {
+/** Paid bookings + pending holds still inside their 15-minute window, overlapping [fromIso, toIso). */
+async function activeBookings(fromIso, toIso) {
   const holdCutoff = new Date(Date.now() - config.pendingHoldMinutes * 60_000).toISOString()
   const { data, error } = await db
     .from('bookings')
-    .select('start_at')
-    .gte('start_at', fromIso)
+    .select('start_at, end_at')
     .lt('start_at', toIso)
+    .gt('end_at', fromIso)
     .or(`status.eq.paid,and(status.eq.pending,created_at.gt.${holdCutoff})`)
   if (error) throw new DbError(error, 'read bookings')
-  return new Set(data.map((b) => new Date(b.start_at).getTime()))
+  return data.map((b) => [new Date(b.start_at).getTime(), new Date(b.end_at).getTime()])
 }
 
 const earliestBookable = () => Date.now() + LEAD_MINUTES * 60_000
 
-export async function availabilityFor(dateStr) {
+
+/**
+ * Slots for one day and one treatment length. Past start times (incl. the 1-hour
+ * lead) are left out entirely; a start time is "available" while, at every
+ * moment of the treatment, fewer than config.rooms bookings are running.
+ */
+export async function availabilityFor(dateStr, treatment) {
   await expireStale()
+  const duration = treatment?.duration_min ?? SLOT_MINUTES
   const today = toDateStr(new Date())
   const last = addDays(today, NEXT_SLOT_SEARCH_DAYS)
-  const rangeEnd = dateStr > last ? addDays(dateStr, 1) : addDays(last, 1)
   const rangeStart = dateStr < today ? dateStr : today
-  const taken = await takenStartTimes(`${rangeStart}T00:00:00Z`, `${rangeEnd}T00:00:00Z`)
+  const rangeEnd = addDays(dateStr > last ? dateStr : last, 1)
+  const ranges = await activeBookings(`${rangeStart}T00:00:00Z`, `${rangeEnd}T00:00:00Z`)
   const cutoff = earliestBookable()
+  const isFree = (d) => peakOverlap(ranges, d.getTime(), addMinutes(d, duration).getTime()) < config.rooms
 
-  const isFree = (d) => d.getTime() >= cutoff && !taken.has(d.getTime())
-
-  const slots = slotStartsForDate(dateStr).map((d) => ({
-    start: d.toISOString(),
-    time: hhmm(d),
-    available: isFree(d),
-  }))
+  const slots = slotStartsForDate(dateStr, duration)
+    .filter((d) => d.getTime() >= cutoff)
+    .map((d) => ({ start: d.toISOString(), end: addMinutes(d, duration).toISOString(), time: hhmm(d), available: isFree(d) }))
 
   let nextFreeSlot = null
   for (let i = 0; i <= NEXT_SLOT_SEARCH_DAYS && !nextFreeSlot; i++) {
-    const found = slotStartsForDate(addDays(today, i)).find(isFree)
+    const found = slotStartsForDate(addDays(today, i), duration).find((d) => d.getTime() >= cutoff && isFree(d))
     if (found) nextFreeSlot = found.toISOString()
   }
 
-  return { date: dateStr, timezone: TIMEZONE, slots, nextFreeSlot }
+  return { date: dateStr, timezone: TIMEZONE, treatmentId: treatment?.id ?? null, durationMin: duration, slots, nextFreeSlot }
 }
 
-export async function isSlotFree(startAt) {
-  if (startAt.getTime() < earliestBookable()) return false
-  const end = new Date(startAt.getTime() + 1).toISOString()
-  const taken = await takenStartTimes(startAt.toISOString(), end)
-  return !taken.has(startAt.getTime())
-}
+export const isBookableStart = (startAt) => startAt.getTime() >= earliestBookable()
 
 // ---------------------------------------------------------------------------
 // Bookings
 // ---------------------------------------------------------------------------
-export async function createPendingBooking({ treatment, startAt, customer, reference }) {
+/**
+ * Atomically hold a room: the database locks the day, re-counts overlapping
+ * bookings and inserts only if one of config.rooms is free.
+ */
+export async function holdSlot({ treatment, startAt, customer, reference }) {
   const { total, deposit } = priceFor(treatment)
-  const { data, error } = await db
-    .from('bookings')
-    .insert({
-      treatment_id: treatment.id,
-      start_at: startAt.toISOString(),
-      customer_name: customer.name,
-      whatsapp: customer.whatsapp,
-      email: customer.email,
-      total_ghs: total,
-      deposit_ghs: deposit,
-      paystack_reference: reference,
-      status: 'pending',
-    })
-    .select()
-    .single()
-  if (error?.code === '23505') throw new HttpError(409, 'That time was just taken. Pick another slot.', { code: 'SLOT_TAKEN' })
-  if (error) throw new DbError(error, 'create booking')
+  const { data, error } = await db.rpc('hold_slot', {
+    p_treatment_id: treatment.id,
+    p_start: startAt.toISOString(),
+    p_end: addMinutes(startAt, treatment.duration_min).toISOString(),
+    p_name: customer.name,
+    p_whatsapp: customer.whatsapp,
+    p_email: customer.email,
+    p_total: total,
+    p_deposit: deposit,
+    p_reference: reference,
+    p_rooms: config.rooms,
+    p_hold_minutes: config.pendingHoldMinutes,
+  })
+  if (error?.message?.includes('SLOT_TAKEN')) {
+    throw new HttpError(409, 'That time was just taken. Pick another slot.', { code: 'SLOT_TAKEN' })
+  }
+  if (error) throw new DbError(error, 'hold slot')
   return data
-}
-
-export async function releaseOwnHold(startAt, email) {
-  const { error } = await db
-    .from('bookings')
-    .update({ status: 'cancelled' })
-    .eq('start_at', startAt.toISOString())
-    .eq('status', 'pending')
-    .eq('email', email)
-  if (error) throw new DbError(error, 'release hold')
 }
 
 export async function cancelBooking(id) {
@@ -161,26 +156,20 @@ export async function markPaidFromTransaction(booking, tx) {
     return { outcome: 'mismatch', booking }
   }
 
-  // A hold that expired can still be paid late; revive it if nobody else took the slot.
-  const { data, error } = await db
-    .from('bookings')
-    .update({ status: 'paid', paid_at: tx.paid_at ?? new Date().toISOString() })
-    .eq('id', booking.id)
-    .in('status', ['pending', 'cancelled'])
-    .select('*, treatment:treatments(id, name, duration_min)')
-    .maybeSingle()
-
-  if (error?.code === '23505') {
-    console.error('[payments] PAID BUT SLOT TAKEN. Refund or rebook manually.', { reference: booking.paystack_reference })
-    return { outcome: 'slot_conflict', booking }
-  }
+  // The database locks the day and re-checks capacity if the hold had expired.
+  const { data: outcome, error } = await db.rpc('mark_booking_paid', {
+    p_reference: booking.paystack_reference,
+    p_paid_at: tx.paid_at ?? tx.paidAt ?? null,
+    p_rooms: config.rooms,
+    p_hold_minutes: config.pendingHoldMinutes,
+  })
   if (error) throw new DbError(error, 'mark booking paid')
-  if (!data) {
-    // Lost a race with the webhook (or /verify); read the current state.
-    const fresh = await getBookingByReference(booking.paystack_reference)
-    return { outcome: fresh?.status === 'paid' ? 'already_paid' : 'not_successful', booking: fresh ?? booking }
+  if (outcome === 'slot_conflict') {
+    console.error('[payments] PAID BUT NO ROOM LEFT. Refund or rebook manually.', { reference: booking.paystack_reference })
+    return { outcome, booking }
   }
-  return { outcome: 'paid', booking: data }
+  const fresh = (await getBookingByReference(booking.paystack_reference)) ?? booking
+  return { outcome: outcome === 'already_paid' ? 'already_paid' : 'paid', booking: fresh }
 }
 
 /** What the browser is allowed to see about a booking. */

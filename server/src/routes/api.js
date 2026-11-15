@@ -9,15 +9,14 @@ import {
   HttpError,
   availabilityFor,
   cancelBooking,
-  createPendingBooking,
   expireStale,
   getBookingByReference,
   getTreatment,
-  isSlotFree,
+  holdSlot,
+  isBookableStart,
   listTreatments,
   markPaidFromTransaction,
   publicBooking,
-  releaseOwnHold,
 } from '../services/bookings.js'
 
 export const api = Router()
@@ -35,7 +34,9 @@ api.get('/treatments', async (_req, res) => {
 })
 
 // ---------------------------------------------------------------------------
-// GET /api/availability?date=YYYY-MM-DD   (date optional, defaults to today in Accra)
+// GET /api/availability?date=YYYY-MM-DD&treatmentId=hot-stone
+// Both optional: date defaults to today (Accra); no treatment = 90-minute default
+// (used by the homepage "Next free slot").
 // ---------------------------------------------------------------------------
 api.get('/availability', async (req, res) => {
   const today = toDateStr(new Date())
@@ -44,8 +45,15 @@ api.get('/availability', async (req, res) => {
   if (date < today || date > addDays(today, config.bookingWindowDays)) {
     throw new HttpError(400, `date must be between today and ${config.bookingWindowDays} days ahead`)
   }
+  let treatment = null
+  if (req.query.treatmentId !== undefined) {
+    const id = req.query.treatmentId
+    if (typeof id !== 'string' || id.length > 64) throw new HttpError(400, 'Invalid treatmentId')
+    treatment = await getTreatment(id)
+    if (!treatment) throw new HttpError(400, 'Unknown treatment', { code: 'UNKNOWN_TREATMENT' })
+  }
   res.set('Cache-Control', 'no-store')
-  res.json(await availabilityFor(date))
+  res.json(await availabilityFor(date, treatment))
 })
 
 // ---------------------------------------------------------------------------
@@ -82,19 +90,22 @@ api.post('/bookings/initialize', bookingLimiter, async (req, res) => {
 
   const startAt = new Date(startIso)
   const maxDate = addDays(toDateStr(new Date()), config.bookingWindowDays)
-  if (!isGridSlot(startAt) || toDateStr(startAt) > maxDate) {
-    throw new HttpError(400, 'That is not a bookable time', { code: 'INVALID_SLOT' })
+  // Must be a grid time where this treatment finishes by closing, inside the booking window.
+  if (!isGridSlot(startAt, treatment.duration_min) || toDateStr(startAt) > maxDate) {
+    throw new HttpError(400, 'That time does not fit this treatment. Pick another slot.', { code: 'INVALID_SLOT' })
+  }
+  if (!isBookableStart(startAt)) {
+    throw new HttpError(409, 'That time has passed. Pick another slot.', { code: 'SLOT_TAKEN' })
   }
 
   await expireStale({ force: true })
-  // Same person retrying (e.g. closed the popup): release their own earlier hold on this slot.
-  await releaseOwnHold(startAt, customer.email)
-  if (!(await isSlotFree(startAt))) throw new HttpError(409, 'That time was just taken. Pick another slot.', { code: 'SLOT_TAKEN' })
 
-  // Amounts come from the database, never from the browser.
+  // Amounts come from the database, never from the browser. holdSlot re-checks
+  // room capacity under a lock (and releases this person's own earlier hold on
+  // this start time), so a slot taken a second ago returns 409 SLOT_TAKEN.
   const { total, deposit, balance } = priceFor(treatment)
   const reference = newReference()
-  const booking = await createPendingBooking({ treatment, startAt, customer, reference })
+  const booking = await holdSlot({ treatment, startAt, customer, reference })
 
   let tx
   try {

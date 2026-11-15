@@ -9,7 +9,7 @@ const dt = 'text-ash'
 const dd = 'm-0 text-right'
 const notPicked = <span className="text-ash">Not picked</span>
 
-export function PayButton({ onPay, deposit, className = '' }) {
+export function PayButton({ onPay, deposit, disabled = false, className = '' }) {
   const status = useBookingStore((s) => s.status)
   const busy = status === 'paying' || status === 'verifying'
   const label =
@@ -20,6 +20,17 @@ export function PayButton({ onPay, deposit, className = '' }) {
         : deposit != null
           ? `Pay ${formatGhs(deposit)} deposit`
           : 'Pay deposit'
+  if (disabled) {
+    return (
+      <button
+        type="button"
+        disabled
+        className={`min-h-[60px] w-full cursor-not-allowed border border-line-dark bg-transparent px-4 text-[15px] font-extrabold tracking-[0.1em] text-ash uppercase ${className}`}
+      >
+        {label}
+      </button>
+    )
+  }
   return (
     <button
       type="button"
@@ -149,10 +160,16 @@ export function MobilePayBar({ onPay }) {
     <aside aria-label="Pay deposit" className="fixed inset-x-0 bottom-0 z-40 border-t border-line-dark bg-ink text-paper lg:hidden">
       <div className="wrap flex items-center gap-4 py-3">
         <div className="flex shrink-0 flex-col">
-          <span className="text-[11px] font-extrabold tracking-[0.14em] text-ash uppercase">Deposit 30%</span>
-          <span className="text-[28px] leading-none font-black stretch-70">{deposit != null ? formatGhs(deposit) : 'GH₵ 0'}</span>
+          {deposit != null ? (
+            <>
+              <span className="text-[11px] font-extrabold tracking-[0.14em] text-ash uppercase">Deposit 30%</span>
+              <span className="text-[28px] leading-none font-black stretch-70">{formatGhs(deposit)}</span>
+            </>
+          ) : (
+            <span className="text-[17px] leading-tight font-extrabold tracking-[0.06em] uppercase">Pick a treatment</span>
+          )}
         </div>
-        <PayButton onPay={onPay} deposit={null} className="min-h-[52px] flex-1 text-sm" />
+        <PayButton onPay={onPay} deposit={null} disabled={deposit == null} className="min-h-[52px] flex-1 text-sm" />
       </div>
     </aside>
   )

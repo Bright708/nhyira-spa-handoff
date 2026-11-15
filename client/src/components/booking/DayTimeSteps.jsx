@@ -1,5 +1,6 @@
-import { useBookingStore } from '../../store/useBookingStore'
+import { useBookingStore, useSelectedTreatment } from '../../store/useBookingStore'
 import { formatClock, isoToHhmm, nextDays } from '../../lib/time'
+import { spokenDuration } from '../../lib/format'
 import { FieldError, StepHeading, optionClass } from './parts'
 
 export function DayStep({ locked }) {
@@ -21,6 +22,7 @@ export function DayStep({ locked }) {
               key={d.date}
               type="button"
               aria-pressed={on}
+              aria-label={`${d.dow} ${d.num} ${d.month}`}
               disabled={locked}
               onClick={() => setDate(d.date)}
               className={`flex min-h-[84px] flex-col items-center px-2 py-3 ${optionClass(on)}`}
@@ -28,7 +30,6 @@ export function DayStep({ locked }) {
               <span className={`text-xs font-extrabold tracking-[0.14em] uppercase ${on ? '' : 'text-muted'}`}>{d.dow}</span>
               {' '}
               <span className="text-[40px] leading-none font-black stretch-70">{d.num}</span>
-              <span className="sr-only"> {d.month}</span>
             </button>
           )
         })}
@@ -41,6 +42,7 @@ export function TimeStep({ availability, locked }) {
   const time = useBookingStore((s) => s.time)
   const setTime = useBookingStore((s) => s.setTime)
   const error = useBookingStore((s) => s.fieldErrors.time)
+  const treatment = useSelectedTreatment()
   const { status, data, retry } = availability
   const slots = data?.slots ?? []
   const anyFree = slots.some((s) => s.available)
@@ -59,6 +61,7 @@ export function TimeStep({ availability, locked }) {
         aria-busy={status === 'loading'}
         className="grid gap-2 outline-offset-4 [grid-template-columns:repeat(auto-fill,minmax(120px,1fr))]"
       >
+        {status === 'none' && <p className="col-span-full m-0 text-muted">Pick a treatment to see times.</p>}
         {status === 'loading' &&
           Array.from({ length: 6 }, (_, i) => <div key={i} aria-hidden="true" className="min-h-[52px] bg-stone" />)}
         {status === 'error' && (
@@ -74,12 +77,15 @@ export function TimeStep({ availability, locked }) {
             const hhmm = s.time ?? isoToHhmm(s.start)
             const on = hhmm === time
             const label = formatClock(hhmm)
+            const spoken = s.available
+              ? `${label}, ${spokenDuration(treatment?.duration_min ?? 90)}, ends ${formatClock(isoToHhmm(s.end ?? s.start))}`
+              : `${label}, taken`
             return (
               <button
                 key={s.start}
                 type="button"
                 aria-pressed={on}
-                aria-label={s.available ? label : `${label}, taken`}
+                aria-label={spoken}
                 disabled={!s.available || locked}
                 onClick={() => setTime(hhmm)}
                 className={`min-h-[52px] text-[15px] font-extrabold tracking-[0.06em] uppercase ${
@@ -91,7 +97,9 @@ export function TimeStep({ availability, locked }) {
             )
           })}
       </div>
-      {status === 'ready' && !anyFree && <p className="m-0 text-muted">Fully booked. Try another day.</p>}
+      {status === 'ready' && !anyFree && (
+        <p className="m-0 text-muted">{slots.length ? 'Fully booked. Try another day.' : 'No times left this day for this treatment. Try another day.'}</p>
+      )}
       <FieldError id="e-time">{error}</FieldError>
     </section>
   )

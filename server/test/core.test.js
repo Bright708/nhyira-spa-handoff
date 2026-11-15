@@ -44,3 +44,14 @@ test('webhook signature: HMAC SHA512 of raw body', () => {
   assert.equal(isValidSignature(body, 'abc'), false)
   assert.equal(isValidSignature(body, undefined), false)
 })
+
+test('capacity: peak concurrency, not raw overlap count', async () => {
+  const { peakOverlap } = await import('../src/lib/capacity.js')
+  const h = (x) => x * 3_600_000
+  // 15-16 and 18-19 both overlap a 15-19 ritual but never each other: one room in use at a time.
+  assert.equal(peakOverlap([[h(15), h(16)], [h(18), h(19)]], h(15), h(19)), 1)
+  // 08-12 and 09:30-10:30 run together: two rooms in use.
+  assert.equal(peakOverlap([[h(8), h(12)], [h(9.5), h(10.5)]], h(9.5), h(11)), 2)
+  // back-to-back is not an overlap
+  assert.equal(peakOverlap([[h(8), h(9)]], h(9), h(10)), 0)
+})

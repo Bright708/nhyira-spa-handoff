@@ -1,6 +1,6 @@
 import { useCatalogStore } from '../../store/useCatalogStore'
 import { useBookingStore } from '../../store/useBookingStore'
-import { formatDuration, formatGhs } from '../../lib/format'
+import { formatGhs, spokenDuration } from '../../lib/format'
 import { FieldError, StepHeading, optionClass } from './parts'
 
 export default function TreatmentStep({ locked }) {
@@ -39,14 +39,15 @@ export default function TreatmentStep({ locked }) {
               key={t.id}
               type="button"
               aria-pressed={on}
+              aria-label={`${t.name}, ${spokenDuration(t.duration_min)}, ${formatGhs(t.price_ghs)}`}
               disabled={locked}
               onClick={() => setTreatment(t.id)}
               className={`flex min-h-[76px] w-full items-center justify-between gap-4 px-5 py-4 text-left ${optionClass(on)}`}
             >
               <span className="flex flex-col">
-                <span className="text-[26px] leading-[1.05] font-black uppercase stretch-72">{t.name}</span>
-                <span className={`text-[13px] ${on ? 'text-ash-light' : 'text-muted'}`}>{formatDuration(t.duration_min)}</span>
-              </span>
+                <span className="text-[26px] leading-[1.05] font-black uppercase stretch-72">{t.name}</span>{' '}
+                <span className={`text-[13px] ${on ? 'text-ash-light' : 'text-muted'}`}>{spokenDuration(t.duration_min)}</span>
+              </span>{' '}
               <span className="font-extrabold whitespace-nowrap">{formatGhs(t.price_ghs)}</span>
             </button>
           )

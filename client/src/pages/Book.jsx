@@ -11,19 +11,27 @@ import SummaryPanel, { MobilePayBar } from '../components/booking/SummaryPanel'
 import { ChevronLeft } from '../components/booking/parts'
 import SkipLink from '../components/SkipLink'
 
-function useAvailability(date) {
+// Times depend on the treatment's length, so refetch when treatment or day changes.
+// If the picked time no longer fits (or was taken), clear it.
+function useAvailability(date, treatmentId) {
   const [state, setState] = useState({ status: 'loading', data: null })
   const [nonce, setNonce] = useState(0)
   useEffect(() => {
-    if (!date) return
+    if (!treatmentId || !date) return
     const ctrl = new AbortController()
     setState({ status: 'loading', data: null })
-    getAvailability(date, { signal: ctrl.signal })
-      .then((data) => setState({ status: 'ready', data }))
+    getAvailability(date, treatmentId, { signal: ctrl.signal })
+      .then((data) => {
+        setState({ status: 'ready', data })
+        const { time, setTime } = useBookingStore.getState()
+        if (time && !data.slots.some((s) => s.available && (s.time ?? s.start.slice(11, 16)) === time)) setTime(null)
+      })
       .catch((err) => err.name !== 'AbortError' && setState({ status: 'error', data: null }))
     return () => ctrl.abort()
-  }, [date, nonce])
+  }, [date, treatmentId, nonce])
   const refresh = useCallback(() => setNonce((n) => n + 1), [])
+  // No treatment picked yet: nothing to fetch, the step shows a prompt instead.
+  if (!treatmentId) return { status: 'none', data: null, retry: refresh, refresh }
   return { ...state, retry: refresh, refresh }
 }
 
@@ -31,7 +39,7 @@ export default function Book() {
   const [params] = useSearchParams()
   const loadCatalog = useCatalogStore((s) => s.load)
   const treatments = useCatalogStore((s) => s.treatments)
-  const { date, status, setTreatment, setDate, reset } = useBookingStore()
+  const { date, treatmentId, status, setTreatment, setDate, reset } = useBookingStore()
 
   useEffect(() => {
     document.title = 'Book a treatment / Nhyira Spa, Accra'
@@ -51,13 +59,13 @@ export default function Book() {
   useEffect(() => {
     if (date) return
     const ctrl = new AbortController()
-    getAvailability(undefined, { signal: ctrl.signal })
+    getAvailability(undefined, undefined, { signal: ctrl.signal })
       .then((a) => setDate((a.nextFreeSlot ?? new Date().toISOString()).slice(0, 10)))
       .catch((err) => err.name !== 'AbortError' && setDate(new Date().toISOString().slice(0, 10)))
     return () => ctrl.abort()
   }, [date, setDate])
 
-  const availability = useAvailability(date)
+  const availability = useAvailability(date, treatmentId)
   const pay = usePayment(availability.refresh)
   const locked = status === 'paying' || status === 'verifying' || status === 'confirmed'
 

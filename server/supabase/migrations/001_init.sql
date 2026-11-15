@@ -56,16 +56,8 @@ create table if not exists public.bookings (
   paid_at             timestamptz
 );
 
--- No double-booking: only one PAID booking per start time.
-create unique index if not exists bookings_one_paid_per_slot
-  on public.bookings (start_at)
-  where status = 'paid';
-
--- Also only one live hold per start time (a pending booking holds the slot for
--- 15 minutes while the customer pays). The server cancels stale holds first.
-create unique index if not exists bookings_one_active_per_slot
-  on public.bookings (start_at)
-  where status in ('pending', 'paid');
+-- Double-booking is prevented in 002_capacity.sql (overlap + room capacity,
+-- checked under a lock in hold_slot / mark_booking_paid).
 
 create index if not exists bookings_start_at_idx on public.bookings (start_at);
 create index if not exists bookings_pending_created_idx on public.bookings (created_at) where status = 'pending';
